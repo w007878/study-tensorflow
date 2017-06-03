@@ -27,6 +27,9 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize = [1, 2, 2, 1],
                          strides = [1, 2, 2, 1], padding = 'SAME')
 
+def normal_noise(shape):
+    return tf.random_normal(shape, stddev = 0.02)
+
 def binary_cross_entropy(lable, logits, epsilon = 1e-8):
     logits = tf.clip_by_value(logits, epsilon, 1. - epsilon)
     return tf.reducce_mean(tf.nn.sigmoid_ccross_entropy_with_logits(labels = label, logits = logits))
@@ -73,6 +76,10 @@ class gengerator:
 
         self.y_conv = tf.matmul(self.h_fc1_drop, self.W_fc2) + self.b_fc2
 
+    def generate(self, sess, batch_size = 100):
+        feed_dict = {x:normal_noise([batch_size, 1600])}
+        return tf.run(y_conv, feed_dict = feed_dict)
+
 
 class discriminator:
     """
@@ -81,4 +88,41 @@ class discriminator:
         the distribution of MNIST.
     """
     def __init__(self):
-        self.w = 1
+        self.x = tf.placeholder(tf.float32, [None, 784])
+        self.W = tf.Variable(tf.zeros([784, 1]))
+        self.b = tf.Variable(tf.zeros([1]))
+        self.y = tf.matmul(x, W) + b
+        self.y_ = tf.placeholder(tf.float32, shape = [None, 1])
+        self.x_image = tf.reshape(x, [-1, 28, 28, 1])
+
+        self.W_conv1 = weight_variable([5, 5, 1, 32])
+        self.b_conv1 = bias_variable([32])
+        self.h_conv1 = tf.nn.relu(conv2d(self.x_image, self.W_conv1) + self.b_conv1)
+        self.h_pool1 = max_pool_2x2(self.h_conv1)
+
+        self.W_conv2 = weight_variable([5, 5, 32, 64])
+        self.b_conv2 = bias_variable([64])
+        self.h_conv2 = tf.nn.relu(conv2d(self.h_pool1, self.W_conv2) + self.b_conv2)
+        self.h_pool2 = max_pool_2x2(self.h_conv2)
+
+        self.W_conv3 = weight_variable([5, 5, 64, 1024])
+        self.b_conv3 = bias_variable([1024])
+        self.h_conv3 = tf.nn.relu(conv2d(self.h_pool2, self.W_conv3) + self.b_conv3)
+        self.h_pool3 = max_pool_2x2(self.h_conv3)
+
+        self.W_fc1 = weight_variable([7 * 7 * 1024, 128])
+        self.b_fc1 = bias_variable([128])
+        self.h_pool3_flat = tf.reshape(self.h_pool3, [-1, 7 * 7 * 1024])
+        self.h_fc1 = tf.nn.relu(tf.matmul(self.h_pool3_flat, W_fc1) + b_fc1)
+
+        self.keep_prob = tf.placeholder(tf.float32)
+        self.h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+
+        self.W_fc2 = weight_variable([128, 1])
+        self.b_fc2 = bias_variable([1])
+
+        self.y_conv = tf.matmul(self.h_fc1_drop, self.W_fc2) + self.b_fc2
+
+    def discriminate(self):
+
+    def train(self, W, input, y_, batch_size = 200):
