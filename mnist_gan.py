@@ -78,7 +78,8 @@ class gengerator:
 
     def generate(self, sess, batch_size = 100):
         feed_dict = {x:normal_noise([batch_size, 1600])}
-        return tf.run(y_conv, feed_dict = feed_dict)
+        train_step = tf.nn.sigmoid(y_conv)
+        return sess.run(train_step, feed_dict = feed_dict)
 
 
 class discriminator:
@@ -123,6 +124,16 @@ class discriminator:
 
         self.y_conv = tf.matmul(self.h_fc1_drop, self.W_fc2) + self.b_fc2
 
-    def discriminate(self):
+    def discriminate(self, sess, image):
+        feed_dict = {x:image}
+        train_step = tf.nn.sigmoid(y_conv)
+        ans = sess.run(train_step, feed_dict = feed_dict)
+        if ans >= 0.5:
+            return 1
+        else:
+            return 0
 
-    def train(self, W, input, y_, batch_size = 200):
+class GAN:
+
+    def __init__(self):
+        
